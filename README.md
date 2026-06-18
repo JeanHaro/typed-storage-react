@@ -204,6 +204,7 @@ Without `useRef`, `createStorage()` would run on every render creating a new ins
 
 - **[@jeanharo98/typed-storage](https://github.com/JeanHaro/typed-storage)** — Core library (required peer dependency)
 - **[@jeanharo98/typed-storage-angular](https://github.com/JeanHaro/typed-storage-angular)** — Angular wrapper
+- **[typed-storage-devtools](https://github.com/JeanHaro/typed-storage-devtools)** — Chrome DevTools extension for real-time inspection |
 
 ---
 
