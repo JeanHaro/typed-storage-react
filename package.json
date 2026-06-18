@@ -7,12 +7,20 @@
   "scripts": {
     "build": "tsc"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JeanHaro/typed-storage-react.git"
+  },
+  "homepage": "https://github.com/JeanHaro/typed-storage-react#readme",
+  "bugs": {
+      "url": "https://github.com/JeanHaro/typed-storage-react/issues"
+  },
   "peerDependencies": {
       "react": ">=18.0.0",
       "@jeanharo98/typed-storage": ">=0.1.0"
   },
   "keywords": [],
-  "author": "",
+  "author": "Jean Haro",
   "license": "MIT",
   "devEngines": {
     "packageManager": {
