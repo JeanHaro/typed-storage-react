@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@jeanharo98/typed-storage':
-        specifier: ^0.1.4
-        version: 0.1.4
+        specifier: ^0.1.9
+        version: 0.1.9
     devDependencies:
       '@types/react':
         specifier: ^19.2.17
@@ -24,14 +24,18 @@ importers:
 
 packages:
 
-  '@jeanharo98/typed-storage@0.1.4':
-    resolution: {integrity: sha512-qte13SHr6JxkRwbJ1za4hcw8hmpLmifz10MauTdd1lnV4eff7NDGaLFWw1HCkxD4YtXLGULqOUHHQ4pODqecWg==}
+  '@jeanharo98/typed-storage@0.1.9':
+    resolution: {integrity: sha512-fsqz19SMiw00fHbffuiswGfzKOv1p1Jqb+Yu594fgxZ1xAPqiPUjNgEuuou54tlwIibEMelsl/Vd6Y6I5JNpMA==}
 
   '@types/react@19.2.17':
     resolution: {integrity: sha512-MXfmqaVPEVgkBT/aY0aGCkRWWtByiYQXo3xdQ8r5RzuFrPiRn8Gar2tQdXSUQ2GKV3bkXckek89V8wQBY2Q/Aw==}
 
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
+
+  lz-string@1.5.0:
+    resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
+    hasBin: true
 
   react@19.2.7:
     resolution: {integrity: sha512-HNe9WslTbXmFK8o8cmwgAeJFSBvt1bPdHCVKtaaV+WlAN36mpT4hcRpwbf3fY56ar2oIXzsBpOAiIRHAdY0OlQ==}
@@ -44,13 +48,17 @@ packages:
 
 snapshots:
 
-  '@jeanharo98/typed-storage@0.1.4': {}
+  '@jeanharo98/typed-storage@0.1.9':
+    dependencies:
+      lz-string: 1.5.0
 
   '@types/react@19.2.17':
     dependencies:
       csstype: 3.2.3
 
   csstype@3.2.3: {}
+
+  lz-string@1.5.0: {}
 
   react@19.2.7: {}
 

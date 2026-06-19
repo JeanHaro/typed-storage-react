@@ -1,6 +1,6 @@
 {
   "name": "@jeanharo98/typed-storage-react",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "React wrapper for @jeanharo98/typed-storage with hooks",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -17,7 +17,7 @@
   },
   "peerDependencies": {
       "react": ">=18.0.0",
-      "@jeanharo98/typed-storage": ">=0.1.4"
+      "@jeanharo98/typed-storage": ">=0.1.9"
   },
   "keywords": [],
   "author": "Jean Haro",
@@ -30,7 +30,7 @@
     }
   },
   "dependencies": {
-    "@jeanharo98/typed-storage": "^0.1.4"
+    "@jeanharo98/typed-storage": "^0.1.9"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",
