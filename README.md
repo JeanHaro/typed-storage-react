@@ -28,8 +28,9 @@ function App() {
 - **Automatic re-renders** — component updates when storage changes
 - **`useSyncExternalStore`** — uses React's official external store API
 - **Cross-tab sync** — updates across browser tabs with `sync: true`
+- **`useTrackRoute()`** — automatic route-based value sync via React Router
 - **Type-safe** — full TypeScript support inferred from your schema
-- **All typed-storage features** — TTL, prefix, sessionStorage, MemoryStorage fallback
+- **All typed-storage features** — TTL, prefix, sessionStorage, MemoryStorage fallback, `destroy()`, `batch()`, `routeOverrides`
 
 ---
 
@@ -41,7 +42,7 @@ npm install @jeanharo98/typed-storage @jeanharo98/typed-storage-react
 pnpm add @jeanharo98/typed-storage @jeanharo98/typed-storage-react
 ```
 
-> Both packages are required — `@jeanharo98/typed-storage` is a peer dependency.
+> Both packages are required — `@jeanharo98/typed-storage` is a peer dependency. `react-router-dom` is required only if you use `useTrackRoute()`.
 
 ---
 
@@ -103,11 +104,70 @@ function Settings() {
             <button onClick={() => storage.set('theme', 'light')}>Set Light</button>
             <button onClick={() => storage.reset('theme')}>Reset</button>
             <button onClick={() => storage.remove('theme')}>Remove</button>
+            <button onClick={() => storage.destroy()}>Destroy All</button>
             <button onClick={() => storage.clear()}>Clear All</button>
         </div>
     );
 }
 ```
+
+---
+
+## 🗑️ Scoped storage with `destroy()`
+
+Same as the core library — completely removes all schema keys from storage, useful for data that should only exist while a specific page/component is mounted:
+
+```tsx
+function ProductsPage() {
+    const storage = useStorage({
+        category: '',
+        priceRange: [0, 100]
+    }, { prefix: 'products-page' });
+
+    useEffect(() => {
+        return () => {
+            storage.destroy();
+            // → all keys removed from localStorage when this component unmounts
+        };
+    }, []);
+
+    // ...
+}
+```
+
+See the [typed-storage README](https://github.com/JeanHaro/typed-storage#-scoped--temporary-storage-with-destroy) for when to use `destroy()` vs `ttl`.
+
+---
+
+## 🧭 Route-based values with `useTrackRoute()`
+
+If your schema uses `routeOverrides`, connect it to React Router automatically — no manual `setRoute()` calls needed:
+
+```tsx
+import { useStorage, useTrackRoute } from '@jeanharo98/typed-storage-react';
+
+function App() {
+    const storage = useStorage({
+        theme: 'dark' as 'dark' | 'light',
+    }, {
+        prefix: 'app',
+        routeOverrides: {
+            '/': { theme: 'dark' },
+            '/about': { theme: 'light' }
+        }
+    });
+
+    useTrackRoute(storage);
+    // Now navigating to /about automatically sets theme to 'light',
+    // and navigating to / sets it back to 'dark' — no manual setRoute() calls
+
+    return <p>Theme: {storage.theme}</p>;
+}
+```
+
+`useTrackRoute()` reads the current path with React Router's `useLocation()` and calls `storage.setRoute(location.pathname)` inside a `useEffect` whenever it changes. It must be called from a component rendered inside a `<BrowserRouter>` (or equivalent) since it relies on React Router's context.
+
+See the [typed-storage README](https://github.com/JeanHaro/typed-storage#-different-values-per-route-with-routeoverrides) for the full `routeOverrides` documentation, including how to remove a key entirely for a specific route using `null`, and how to apply an override only once with `__once`.
 
 ---
 
@@ -119,7 +179,10 @@ useStorage(schema, {
     storage: 'session',     // Use sessionStorage instead of localStorage
     ttl: 3600000,           // Expire after 1 hour
     sync: true,             // Sync across browser tabs
-    encrypt: true,          // Shows security warning
+    routeOverrides: {       // Different values per route
+        '/checkout': { currency: null }
+    },
+    encrypt: true,          // Requires 'secret' — see typed-storage docs for security notes
 })
 ```
 
@@ -129,7 +192,8 @@ useStorage(schema, {
 | `storage` | `'local' \| 'session'` | `'local'` | Storage type |
 | `ttl` | `number` | — | Time to live in milliseconds |
 | `sync` | `boolean` | `false` | Cross-tab sync via StorageEvent |
-| `encrypt` | `boolean` | `false` | Shows security warning |
+| `routeOverrides` | `Record<string, Record<string, any>>` | — | Per-route key values, applied via `setRoute()` / `useTrackRoute()` |
+| `encrypt` | `boolean` | `false` | Requires `secret` — see [typed-storage security notes](https://github.com/JeanHaro/typed-storage#-encryption-xor-obfuscation) |
 
 ---
 
@@ -152,7 +216,17 @@ Returns an object where each key is the current value (not a function), plus:
 | `reset(key)` | Resets to `initialValue` |
 | `remove(key)` | Removes the key from storage |
 | `has(key)` | Returns `true` if the key exists in storage |
-| `clear()` | Resets all keys to their `initialValue` |
+| `clear()` | Resets all keys to their `initialValue` (keys still exist) |
+| `destroy()` | Completely removes all keys from storage |
+| `setRoute(route)` | Applies the `routeOverrides` entry for `route`, if any |
+
+### `useTrackRoute(storage)`
+
+Subscribes `storage.setRoute()` to React Router location changes automatically. Must be called inside a component rendered within a Router context.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `storage` | `{ setRoute(route: string): void }` | The object returned by `useStorage()` |
 
 ---
 
@@ -169,10 +243,13 @@ useStorage()
   │           getSnapshot: () => storage[key]()
   │         )
   │
-  ├── remove() and clear() call forceUpdate()
-  │     → triggers re-render so has() reflects the change
+  ├── remove(), clear(), destroy(), and setRoute() call forceUpdate()
+  │     → triggers re-render since these can affect keys without
+  │       going through a single signal's onChange in a way React
+  │       would otherwise pick up on its own
   │
-  └── Returns { theme, language, ..., set, reset, remove, has, clear }
+  └── Returns { theme, language, ..., set, reset, remove, has,
+                clear, destroy, setRoute }
 ```
 
 **Why `useSyncExternalStore`?**
@@ -184,8 +261,8 @@ It's React's official API for subscribing to external stores. It correctly handl
 **Why `useRef` for the storage instance?**
 Without `useRef`, `createStorage()` would run on every render creating a new instance and losing the current values. `useRef` persists the instance across renders without causing re-renders itself.
 
-**Why `forceUpdate` on `remove()` and `clear()`?**
-`useSyncExternalStore` only subscribes to value changes via `onChange()`. When `remove()` is called, the value is deleted but `onChange` doesn't fire — so `has()` wouldn't update. `forceUpdate` forces a re-render so `has()` reflects the correct state.
+**Why `forceUpdate` on `remove()`, `clear()`, `destroy()`, and `setRoute()`?**
+`useSyncExternalStore` subscribes to value changes via `onChange()` per key. Operations that can affect `has()` state or multiple keys at once benefit from an explicit re-render trigger, so the UI reflects the change immediately and consistently.
 
 ---
 
@@ -197,6 +274,7 @@ Without `useRef`, `createStorage()` would run on every render creating a new ins
 | Reactivity | Angular Signals | `useSyncExternalStore` |
 | Setup | `TypedStorageService` in a `@Service()` | `useStorage()` hook directly |
 | Re-renders | Angular change detection | React state updates |
+| Route tracking | `trackRoute(storage, router)` | `useTrackRoute(storage)` |
 
 ---
 
@@ -204,7 +282,7 @@ Without `useRef`, `createStorage()` would run on every render creating a new ins
 
 - **[@jeanharo98/typed-storage](https://github.com/JeanHaro/typed-storage)** — Core library (required peer dependency)
 - **[@jeanharo98/typed-storage-angular](https://github.com/JeanHaro/typed-storage-angular)** — Angular wrapper
-- **[typed-storage-devtools](https://github.com/JeanHaro/typed-storage-devtools)** — Chrome DevTools extension for real-time inspection |
+- **[typed-storage-devtools](https://github.com/JeanHaro/typed-storage-devtools)** — Chrome DevTools extension for real-time inspection
 
 ---
 
