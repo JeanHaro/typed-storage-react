@@ -203,6 +203,10 @@ function OrphanComponent() {
 
 This is intentional — it catches the mistake immediately at runtime instead of silently returning `undefined` and producing confusing bugs later.
 
+### ⚠️ `StorageProvider` is for ONE shared value — not per-page isolation
+
+`StorageProvider` (with `routeOverrides`, with or without `__once`) always keeps **one shared value** across the whole tree — e.g. a single `app:theme` key. It never gives `Home` and `About` their own truly independent copies. If what you actually want is for each page to keep its **own, fully isolated** value — see the next section instead.
+
 ---
 
 ## 🗑️ Scoped storage with `destroy()`
@@ -264,6 +268,42 @@ function App() {
 > If you use `StorageProvider`, you don't need to call `useTrackRoute()` yourself — it's already wired up internally.
 
 See the [typed-storage README](https://github.com/JeanHaro/typed-storage#-different-values-per-route-with-routeoverrides) for the full `routeOverrides` documentation, including how to remove a key entirely for a specific route using `null`, and how to apply an override only once with `__once`.
+
+---
+
+## 🧩 Independent storage per page (separate `prefix`, no `StorageProvider`)
+
+`StorageProvider` and `useTrackRoute()`/`routeOverrides` are for **one shared value** across your app. If instead you want each page to keep its **own, fully independent** value — where changing it in one page never affects another — just call `useStorage()` separately in each page component with its own `prefix`, and skip `StorageProvider`/`routeOverrides`/`__once` entirely:
+
+```tsx
+// Home.tsx — its own isolated storage
+import { useStorage } from '@jeanharo98/typed-storage-react';
+
+export function Home() {
+    const storage = useStorage({
+        theme: 'dark' as 'dark' | 'light'
+    }, { prefix: 'home' }); // stored as 'home:theme'
+
+    return <p>Theme: {storage.theme}</p>;
+}
+```
+
+```tsx
+// About.tsx — a completely separate isolated storage
+import { useStorage } from '@jeanharo98/typed-storage-react';
+
+export function About() {
+    const storage = useStorage({
+        theme: 'light' as 'dark' | 'light'
+    }, { prefix: 'about' }); // stored as 'about:theme'
+
+    return <p>Theme: {storage.theme}</p>;
+}
+```
+
+Changing `Home`'s `theme` never affects `About`'s, and vice versa — they're two entirely different `localStorage` keys (`home:theme` and `about:theme`). No `StorageProvider`, no `routeOverrides`, no `__once` needed for this — it's the right tool when true per-page isolation is what you want, and `main.tsx` doesn't need any `StorageProvider` wrapping at all in this case.
+
+See the [typed-storage README's pattern comparison table](https://github.com/JeanHaro/typed-storage#choosing-the-right-pattern) for a full breakdown of when to use separate `prefix`es vs. `routeOverrides` (with or without `__once`).
 
 ---
 
