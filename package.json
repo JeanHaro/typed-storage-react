@@ -1,6 +1,6 @@
 {
   "name": "@jeanharo98/typed-storage-react",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "React wrapper for @jeanharo98/typed-storage with hooks",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,11 +13,12 @@
   },
   "homepage": "https://github.com/JeanHaro/typed-storage-react#readme",
   "bugs": {
-      "url": "https://github.com/JeanHaro/typed-storage-react/issues"
+    "url": "https://github.com/JeanHaro/typed-storage-react/issues"
   },
   "peerDependencies": {
-      "react": ">=18.0.0",
-      "@jeanharo98/typed-storage": ">=0.1.9"
+    "@jeanharo98/typed-storage": ">=0.1.9",
+    "react": ">=18.0.0",
+    "react-router-dom": ">=6.0.0"
   },
   "keywords": [],
   "author": "Jean Haro",
@@ -35,6 +36,7 @@
   "devDependencies": {
     "@types/react": "^19.2.17",
     "react": "^19.2.7",
+    "react-router-dom": "^7.18.1",
     "typescript": "^6.0.3"
   }
 }

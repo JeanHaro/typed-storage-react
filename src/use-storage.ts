@@ -38,13 +38,23 @@ export function useStorage<T extends StorageSchema>(
     result.reset = ( key: keyof T ) => storage[key].reset();
     result.remove = ( key: keyof T ) => { 
         storage[key].remove();
-        forceUpdate(n => n + 1); // ← fuerza re-render
+        forceUpdate(n => n + 1); // fuerza re-render
     }
     result.has = ( key: keyof T ) => storage[key].has();
     result.clear = () => {
         storage.clear();
-        forceUpdate(n => n + 1); // ← fuerza re-render
+        forceUpdate(n => n + 1); // fuerza re-render
     }
+
+    result.destroy = () => {
+        storage.destroy();
+        forceUpdate(n => n + 1); // fuerza re-render, igual que remove/clear
+    }
+
+    result.setRoute = (route: string) => {
+        storage.setRoute(route);
+        forceUpdate(n => n + 1); // fuerza re-render para reflejar los cambios
+}
 
     return result;
 }
