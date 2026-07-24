@@ -24,8 +24,7 @@ export function useStorage<T extends StorageSchema>(
     for ( const key of Object.keys(schema) ) {
         result[key] = useSyncExternalStore(
             (callback) => {
-                storage[key].onChange(callback);
-                return () => {}; // cleanup - no tenemos unsubscribe todavia
+                return storage[key].onChange(callback);
             },
             () => storage[key]() // getSnapshot - valor actual
         );
