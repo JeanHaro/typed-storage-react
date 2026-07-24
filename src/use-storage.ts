@@ -5,10 +5,25 @@ import {
     StorageSignalOptions
 } from '@jeanharo98/typed-storage';
 
+export type UseStorageResult<T extends StorageSchema> = {
+    [K in keyof T]: T[K]
+} & {
+    set<K extends keyof T>(key: K, value: T[K]): void;
+    reset(key: keyof T): void;
+    remove(key: keyof T): void;
+    has(key: keyof T): boolean;
+    clear(): void;
+    destroy(): void;
+    setRoute(route: string): void;
+    batch(values: Partial<T>): void;
+    archive(): Promise<void>;
+    restore(): Promise<void>;
+}
+
 export function useStorage<T extends StorageSchema>(
     schema: T,
     options?: StorageSignalOptions
-) {
+): UseStorageResult<T> {
     // useRef guarda la instancia entre renders, no se recrea
     const storageRef = useRef<any>(null);
 
@@ -70,5 +85,5 @@ export function useStorage<T extends StorageSchema>(
         forceUpdate(n => n + 1); // fuerza re-render, valores restaurados
     }
 
-    return result;
+    return result as UseStorageResult<T>;
 }
