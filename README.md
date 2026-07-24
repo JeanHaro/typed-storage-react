@@ -31,7 +31,7 @@ function App() {
 - **Cross-tab sync** — updates across browser tabs with `sync: true`
 - **`useTrackRoute()`** — automatic route-based value sync via React Router
 - **Type-safe** — full TypeScript support inferred from your schema
-- **All typed-storage features** — TTL, prefix, sessionStorage, MemoryStorage fallback, `destroy()`, `batch()`, `routeOverrides`
+- **All typed-storage features** — TTL, prefix, sessionStorage, MemoryStorage fallback, `destroy()`, `batch()`, `archive()`/`restore()`, `routeOverrides`
 
 ---
 
@@ -113,6 +113,60 @@ function Settings() {
     );
 }
 ```
+
+---
+
+## 📦 Batch updates
+
+Update multiple keys in a single call, forcing a single re-render instead of one per key:
+
+```tsx
+function SettingsPage() {
+    const storage = useStorage({
+        theme: 'dark' as 'dark' | 'light',
+        fontSize: 16,
+        language: 'es' as 'es' | 'en',
+    }, { prefix: 'app' });
+
+    const save = () => {
+        storage.batch({
+            theme: 'light',
+            fontSize: 20
+            // language is not included — stays unchanged
+        });
+    };
+
+    return <button onClick={save}>Save preferences</button>;
+}
+```
+
+See the [typed-storage README](https://github.com/JeanHaro/typed-storage#-batch-updates) for the full documentation.
+
+---
+
+## 📦 Archiving to IndexedDB with `archive()` and `restore()`
+
+Both are `async` — free real space in `localStorage` while a page isn't in active use, and bring the data back when needed:
+
+```tsx
+function EditorPage() {
+    const storage = useStorage({
+        formDraft: { title: '', content: '' }
+    }, { prefix: 'editor' });
+
+    useEffect(() => {
+        storage.restore(); // brings back any previously archived data
+
+        return () => {
+            storage.archive(); // moves current data to IndexedDB on unmount
+        };
+    }, []);
+
+    return <p>{storage.formDraft.title}</p>;
+}
+```
+
+Both trigger a re-render once they resolve — `archive()` resets the affected values to their `initialValue` (since the data moved out of `localStorage`), and `restore()` updates them with whatever was brought back. See the [typed-storage README](https://github.com/JeanHaro/typed-storage#-archiving-data-to-indexeddb-with-archive-and-restore) for the full documentation and how this differs from the automatic quota-exceeded fallback.
 
 ---
 
@@ -318,18 +372,11 @@ useStorage(schema, {
     routeOverrides: {       // Different values per route
         '/checkout': { currency: null }
     },
-    encrypt: true,          // Requires 'secret' — see typed-storage docs for security notes
+    validate: {},            // Optional Zod-compatible runtime validation
+    plugins: [],             // Optional lifecycle hooks
+    encrypt: true,           // Requires 'secret' — see typed-storage docs for security notes
 })
 ```
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `prefix` | `string` | — | Prepends `prefix:` to every key |
-| `storage` | `'local' \| 'session'` | `'local'` | Storage type |
-| `ttl` | `number` | — | Time to live in milliseconds |
-| `sync` | `boolean` | `false` | Cross-tab sync via StorageEvent |
-| `routeOverrides` | `Record<string, Record<string, any> & { __once?: boolean }>` | — | Per-route key values, applied via `setRoute()` / `useTrackRoute()` / `StorageProvider` |
-| `encrypt` | `boolean` | `false` | Requires `secret` — see [typed-storage security notes](https://github.com/JeanHaro/typed-storage#-encryption-xor-obfuscation) |
 
 `options` accepts the exact same options as `createStorage()` in the core library — see the [typed-storage README](https://github.com/JeanHaro/typed-storage#%EF%B8%8F-options) for the full list.
 
@@ -357,6 +404,9 @@ Returns an object where each key is the current value (not a function), plus:
 | `clear()` | Resets all keys to their `initialValue` (keys still exist) |
 | `destroy()` | Completely removes all keys from storage |
 | `setRoute(route)` | Applies the `routeOverrides` entry for `route`, if any |
+| `batch(values)` | Updates multiple keys in a single call, one re-render |
+| `archive()` | Moves all schema keys to IndexedDB, removes them from `localStorage`. Async |
+| `restore()` | Brings archived keys back from IndexedDB into `localStorage`. Async |
 
 ### `StorageProvider`
 
@@ -395,13 +445,15 @@ useStorage()
   │           getSnapshot: () => storage[key]()
   │         )
   │
-  ├── remove(), clear(), destroy(), and setRoute() call forceUpdate()
+  ├── remove(), clear(), destroy(), setRoute(), batch(), archive(), and
+  │     restore() all call forceUpdate()
   │     → triggers re-render since these can affect keys without
   │       going through a single signal's onChange in a way React
-  │       would otherwise pick up on its own
+  │       would otherwise pick up on its own; archive()/restore() also
+  │       await the underlying async core call before forcing the update
   │
   └── Returns { theme, language, ..., set, reset, remove, has,
-                clear, destroy, setRoute }
+                clear, destroy, setRoute, batch, archive, restore }
 
 StorageProvider
   │
@@ -422,8 +474,8 @@ It's React's official API for subscribing to external stores. It correctly handl
 **Why `useRef` for the storage instance?**
 Without `useRef`, `createStorage()` would run on every render creating a new instance and losing the current values. `useRef` persists the instance across renders without causing re-renders itself.
 
-**Why `forceUpdate` on `remove()`, `clear()`, `destroy()`, and `setRoute()`?**
-`useSyncExternalStore` subscribes to value changes via `onChange()` per key. Operations that can affect `has()` state or multiple keys at once benefit from an explicit re-render trigger, so the UI reflects the change immediately and consistently.
+**Why `forceUpdate` on `remove()`, `clear()`, `destroy()`, `setRoute()`, `batch()`, `archive()`, and `restore()`?**
+`useSyncExternalStore` subscribes to value changes via `onChange()` per key. Operations that can affect `has()` state or multiple keys at once benefit from an explicit re-render trigger, so the UI reflects the change immediately and consistently. For `archive()`/`restore()`, `forceUpdate` fires after the returned Promise resolves.
 
 **Why does `StorageProvider` exist if `useStorage()` already works?**
 `useStorage()` is correct for a single component owning its own schema. The moment two or more components need to read/write the *same* schema, calling `useStorage()` independently in each one creates separate instances with separately-defined `options` — a common source of subtle bugs (e.g. `routeOverrides` defined differently, or forgotten, in one of the components). `StorageProvider` removes that risk by making the instance and its configuration exist in exactly one place.
@@ -440,6 +492,7 @@ Without `useRef`, `createStorage()` would run on every render creating a new ins
 | Setup (shared across app) | `@Service()` is already a singleton via DI | `StorageProvider` + `useAppStorage()` (Context) |
 | Re-renders | Angular change detection | React state updates |
 | Route tracking | `trackRoute(storage, router)` | `useTrackRoute(storage)` (automatic if using `StorageProvider`) |
+| Batch/archive/restore | ✅ `batch()`, `archive()`, `restore()` | ✅ `batch()`, `archive()`, `restore()` |
 
 ---
 

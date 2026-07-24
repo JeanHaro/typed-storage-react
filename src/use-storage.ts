@@ -9,7 +9,7 @@ export function useStorage<T extends StorageSchema>(
     schema: T,
     options?: StorageSignalOptions
 ) {
-    // useRef guarda la instancia entre renders - no se recrea
+    // useRef guarda la instancia entre renders, no se recrea
     const storageRef = useRef<any>(null);
 
     if ( !storageRef.current ) {
@@ -25,7 +25,7 @@ export function useStorage<T extends StorageSchema>(
         result[key] = useSyncExternalStore(
             (callback) => {
                 storage[key].onChange(callback);
-                return () => {}; // cleanup - nio tenemos unsubscribe todavia
+                return () => {}; // cleanup - no tenemos unsubscribe todavia
             },
             () => storage[key]() // getSnapshot - valor actual
         );
@@ -54,7 +54,22 @@ export function useStorage<T extends StorageSchema>(
     result.setRoute = (route: string) => {
         storage.setRoute(route);
         forceUpdate(n => n + 1); // fuerza re-render para reflejar los cambios
-}
+    }
+
+    result.batch = (values: Partial<T>) => {
+        storage.batch(values);
+        forceUpdate(n => n + 1); // fuerza re-render para reflejar todos los cambios
+    }
+
+    result.archive = async () => {
+        await storage.archive();
+        forceUpdate(n => n + 1); // fuerza re-render, valores volvieron al initialValue
+    }
+
+    result.restore = async () => {
+        await storage.restore();
+        forceUpdate(n => n + 1); // fuerza re-render, valores restaurados
+    }
 
     return result;
 }
