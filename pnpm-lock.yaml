@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@jeanharo98/typed-storage':
-        specifier: ^1.2.2
-        version: 1.2.2
+        specifier: ^1.2.3
+        version: 1.2.3
     devDependencies:
       '@types/react':
         specifier: ^19.2.17
@@ -27,8 +27,8 @@ importers:
 
 packages:
 
-  '@jeanharo98/typed-storage@1.2.2':
-    resolution: {integrity: sha512-Yi8/7IJUX7r4/zLaiI3HM3f5I9X8IqBUjwlbcYqO69RqlvTNMuENVg5DyLXLHFGZ3pusu7J1ZmHzpuvOiAkehg==}
+  '@jeanharo98/typed-storage@1.2.3':
+    resolution: {integrity: sha512-j86flGUgfT4rvQgSq4hfbYipg/rzzAbm0KYfMO9dRrKMt9JwvTgVKDxgByuVDWhxhOQiNosjOIEkSKSQKdVwiA==}
 
   '@types/react@19.2.17':
     resolution: {integrity: sha512-MXfmqaVPEVgkBT/aY0aGCkRWWtByiYQXo3xdQ8r5RzuFrPiRn8Gar2tQdXSUQ2GKV3bkXckek89V8wQBY2Q/Aw==}
@@ -83,7 +83,7 @@ packages:
 
 snapshots:
 
-  '@jeanharo98/typed-storage@1.2.2':
+  '@jeanharo98/typed-storage@1.2.3':
     dependencies:
       lz-string: 1.5.0
 
