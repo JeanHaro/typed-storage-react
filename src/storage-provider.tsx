@@ -1,5 +1,6 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useStorage } from './use-storage.js';
+import type { UseStorageResult } from './use-storage.js';
 import { useTrackRoute } from './use-route-tracking.js';
 import { StorageSchema, StorageSignalOptions } from '@jeanharo98/typed-storage';
 
@@ -23,7 +24,7 @@ export function StorageProvider<T extends StorageSchema>({
     );
 }
 
-export function useAppStorage<T = any>(): T {
+export function useAppStorage<T extends StorageSchema = StorageSchema>(): UseStorageResult<T> {
     const context = useContext(StorageContext);
     if (!context) {
         throw new Error('useAppStorage debe usarse dentro de un StorageProvider');

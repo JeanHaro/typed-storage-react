@@ -1,6 +1,6 @@
 {
   "name": "@jeanharo98/typed-storage-react",
-  "version": "0.5.6",
+  "version": "0.6.0",
   "description": "React wrapper for @jeanharo98/typed-storage with hooks",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
